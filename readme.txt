@@ -23,3 +23,25 @@ Next Step Checklist
 4.Add a GNN – optional but demonstrates how similarity between clients can improve λ propagation.
 5.Integrate DP accounting – to certify privacy (ε, δ) across all rounds.
 Once the above additions are in place, you will have a research‑grade federated pipeline that satisfies the three bullets you specified: real‑time bias discovery, dynamic λ adjustment, and privacy‑preserving knowledge sharing.
+
+
+
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+
+PowerShell: .\.venv\Scripts\Activate.ps1
+CMD: .\.venv\Scripts\activate.bat
+Git Bash/MSYS: source .venv/Scripts/activate
+
+Upgrade tools: python -m pip install -U pip setuptools wheel
+Install: python -m pip install -r requirements.txt
+If needed for simulation: python -m pip install "flwr[simulation]==1.11.0"
+
+Run: python run_fed.py
+Common Pitfall (Execution Policy)
+
+If you see “running scripts is disabled”, run:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Then: .\.venv\Scripts\Activate.ps1
+Or: Unblock-File .\.venv\Scripts\Activate.ps1 once

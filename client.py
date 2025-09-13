@@ -6,9 +6,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 from collections import OrderedDict
 from typing import Dict, List, Tuple
+import numpy as np
 
 from utils import (SimpleCounterfactual, BiasEstimator,
                    compute_embedding, dp_clip_and_add_noise)
+import json
 
 
 # ---------------------------  Basic CNN  ---------------------------------
@@ -42,6 +44,7 @@ class FCFMClient(fl.client.NumPyClient):
                  train_loader,
                  valid_loader,
                  device,
+                 test_loader=None,
                  lambda_init: float = 1.0,
                  clip_norm_bias: float = 0.5,
                  noise_std_bias: float = 0.1,
@@ -51,6 +54,7 @@ class FCFMClient(fl.client.NumPyClient):
         self.model = model
         self.train_loader = train_loader
         self.valid_loader = valid_loader
+        self.test_loader = test_loader
         self.device = device
         self.lambda_i = lambda_init
         self.clip_norm_bias = clip_norm_bias
@@ -86,7 +90,8 @@ class FCFMClient(fl.client.NumPyClient):
         self.model.eval()
         biases = []
         uncertainties = []
-        embeddings = []
+        sum_emb = None
+        total_emb = 0
         with torch.no_grad():
             for X, y, a in self.valid_loader:
                 X, y, a = X.to(self.device), y.to(self.device).float(), a.to(self.device).float()
@@ -95,29 +100,44 @@ class FCFMClient(fl.client.NumPyClient):
                                                                num_ensembles=3)
                 biases.append(bias)
                 uncertainties.append(uncert)
-                emb = compute_embedding(X)
-                embeddings.append(emb)
-        mean_bias = np.mean(biases)
-        mean_uncert = np.mean(uncertainties)
-        mean_emb = np.mean(embeddings, axis=0)  # 10 dims
+                emb = compute_embedding(X)  # shape (batch, 10)
+                # accumulate sum over batch for a stable mean across variable batch sizes
+                batch_sum = emb.sum(axis=0)
+                if sum_emb is None:
+                    sum_emb = batch_sum.astype(np.float32)
+                else:
+                    sum_emb = sum_emb + batch_sum.astype(np.float32)
+                total_emb += emb.shape[0]
+        mean_bias = float(np.mean(biases)) if len(biases) else 0.0
+        mean_uncert = float(np.mean(uncertainties)) if len(uncertainties) else 0.0
+        if total_emb > 0 and sum_emb is not None:
+            mean_emb = (sum_emb / float(total_emb)).astype(np.float32)
+        else:
+            mean_emb = np.zeros(10, dtype=np.float32)
 
         # DP clip + noise
+        dp_bias = dp_clip_and_add_noise(
+            torch.tensor(mean_bias, dtype=torch.float32),
+            self.clip_norm_bias, self.noise_std_bias, eps=1.0,
+            key=self.client_id
+        )
+        dp_uncert = dp_clip_and_add_noise(
+            torch.tensor(mean_uncert, dtype=torch.float32),
+            self.clip_norm_bias, self.noise_std_bias, eps=1.0,
+            key=self.client_id + 100
+        )
+        dp_embed = dp_clip_and_add_noise(
+            torch.tensor(mean_emb, dtype=torch.float32),
+            self.clip_norm_emb, self.noise_std_emb, eps=1.0,
+            key=self.client_id + 200
+        )
+
         payload = {
-            "bias":   dp_clip_and_add_noise(
-                torch.tensor(mean_bias, dtype=torch.float32),
-                self.clip_norm_bias, self.noise_std_bias, eps=1.0,
-                key=self.client_id
-            ),
-            "uncert": dp_clip_and_add_noise(
-                torch.tensor(mean_uncert, dtype=torch.float32),
-                self.clip_norm_bias, self.noise_std_bias, eps=1.0,
-                key=self.client_id + 100
-            ),
-            "embed":  dp_clip_and_add_noise(
-                torch.tensor(mean_emb, dtype=torch.float32),
-                self.clip_norm_emb, self.noise_std_emb, eps=1.0,
-                key=self.client_id + 200
-            ),
+            "bias_noisy": float(dp_bias),
+            "bias_raw": float(mean_bias),
+            "uncert": float(dp_uncert),
+            # Flower metrics must be scalars/strings; encode array as JSON
+            "embed":  json.dumps(np.asarray(dp_embed, dtype=np.float32).tolist()),
         }
         return payload
 
@@ -141,13 +161,32 @@ class FCFMClient(fl.client.NumPyClient):
         self._train_one_round(round_epochs)
 
         payload = self._compute_bias_payload()
-        return self.get_parameters(), len(self.train_loader.dataset), {
+        metrics = {
             "lambda": float(self.lambda_i),
-            "bias":   payload["bias"],
-            "uncert": payload["uncert"],
-            "embed":  payload["embed"]
+            "bias_noisy": payload.get("bias_noisy"),
+            "bias_raw": payload.get("bias_raw"),
+            "uncert": payload.get("uncert"),
+            "embed": payload.get("embed"),
         }
+        return self.get_parameters(), len(self.train_loader.dataset), metrics
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
-        return 0.0, 0, {}
+        self.model.eval()
+        loader = self.test_loader if self.test_loader is not None else self.valid_loader
+        total_loss = 0.0
+        total_correct = 0
+        total = 0
+        with torch.no_grad():
+            for X, y, _a in loader:
+                X = X.to(self.device)
+                y = y.to(self.device).float()
+                logits = self.model(X).squeeze()
+                loss = self.criterion(logits, y)
+                total_loss += float(loss.item()) * X.size(0)
+                preds = (torch.sigmoid(logits) >= 0.5).float()
+                total_correct += int((preds == y).sum().item())
+                total += int(X.size(0))
+        avg_loss = float(total_loss / total) if total > 0 else 0.0
+        acc = float(total_correct / total) if total > 0 else 0.0
+        return avg_loss, total, {"accuracy": acc}

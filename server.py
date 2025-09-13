@@ -4,10 +4,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+import json
 from collections import OrderedDict
 from typing import Dict, List, Tuple
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import equal_opportunity_difference
+# Note: Metrics imports removed; not used and can cause import issues.
 from copy import deepcopy
 
 
@@ -58,6 +58,8 @@ class FCFMStrategy(fl.server.strategy.FedAvg):
         self.disc_optim = optim.Adam(self.discriminator.parameters(), lr=1e-3)
         self.lambda_policy = LambdaPolicy().to(self.device)
         self.lambda_opt = optim.Adam(self.lambda_policy.parameters(), lr=1e-3)
+        # track last per-client stats
+        self.client_state: Dict[str, Dict] = {}
 
     # ----------------------------------------------
     # 1.  Called after a round of aggregation
@@ -70,18 +72,37 @@ class FCFMStrategy(fl.server.strategy.FedAvg):
 
         params, metrics = super().aggregate_fit(rnd, results, failures)
 
+        # If no successful client results, skip custom updates
+        if len(results) == 0:
+            return params, metrics if isinstance(metrics, dict) else {}
+
         # ----  collect all payloads
         biases = []
         ents   = []
         embeds = []
         lambdas = []
 
+        raw_biases = []
         for (client, fit_res) in results:
             m = fit_res.metrics
-            biases.append(m["bias"])
-            ents.append(m["uncert"])
-            embeds.append(m["embed"])
-            lambdas.append(m["lambda"])
+            # Metrics come back as scalars/JSON strings
+            biases.append(float(m.get("bias_noisy", m.get("bias", 0.0))))
+            ents.append(float(m["uncert"]))
+            embeds.append(np.array(json.loads(m["embed"]), dtype=np.float32))
+            lambdas.append(float(m.get("lambda", 0.0)))
+            if "bias_raw" in m:
+                try:
+                    raw_biases.append(float(m["bias_raw"]))
+                except Exception:
+                    pass
+
+        # ----  compute mean bias and log it
+        mean_bias = float(np.mean(biases)) if len(biases) > 0 else 0.0
+        msg = f"[Server] Round {rnd}: mean bias noised = {mean_bias:.4f}"
+        if len(raw_biases) > 0:
+            mean_bias_raw = float(np.mean(raw_biases))
+            msg += f" | raw = {mean_bias_raw:.4f}"
+        print(msg)
 
         # -- 1) update discriminator
         emb_tensor = torch.tensor(np.stack(embeds), dtype=torch.float32)
@@ -89,7 +110,7 @@ class FCFMStrategy(fl.server.strategy.FedAvg):
         # target: 0 = biased, 1 = fair
         # fair if bias < 0.1 (tunable)
         fair_targets = (bias < 0.1).float().unsqueeze(-1)
-        disc_pred = self.discriminator(emb_tensor).unsqueeze(-1)
+        disc_pred = self.discriminator(emb_tensor)
         disc_loss = nn.BCELoss()(disc_pred, fair_targets)
 
         self.disc_optim.zero_grad()
@@ -99,7 +120,7 @@ class FCFMStrategy(fl.server.strategy.FedAvg):
         # -- 2) update lambda policy
         # target λ* = 1 / (1 + |bias|)  (smaller bias → smaller λ)
         target_lam = (1.0 / (1.0 + bias.abs())).unsqueeze(-1)
-        pred_lam   = self.lambda_policy(bias.unsqueeze(-1))
+        pred_lam   = self.lambda_policy(bias)
         lam_loss   = nn.MSELoss()(pred_lam, target_lam)
 
         self.lambda_opt.zero_grad()
@@ -107,34 +128,54 @@ class FCFMStrategy(fl.server.strategy.FedAvg):
         self.lambda_opt.step()
 
         # ----  compute per‑client λ to send back
-        lam_pred_all = self.lambda_policy(bias.unsqueeze(-1)).detach().cpu().numpy().squeeze()
+        lam_pred_all = self.lambda_policy(bias).detach().cpu().numpy().squeeze()
+
+        # store last seen state per client id
+        for (client, fit_res), b, u, e, l in zip(results, biases, ents, embeds, lambdas):
+            cid = getattr(client, "cid", None)
+            if cid is None:
+                continue
+            self.client_state[cid] = {
+                "bias": float(b),
+                "uncert": float(u),
+                "embed": np.asarray(e, dtype=np.float32),
+                "lambda": float(l),
+            }
 
         # ----  log
         print(f"[Server] Round {rnd}: Discriminator loss={disc_loss.item():.4f}, "
               f"Lambda loss={lam_loss.item():.4f}")
 
-        return params, {"lambda_policy_loss": lam_loss.item(),
-                        "disc_loss": disc_loss.item()}
+        out_metrics = {"lambda_policy_loss": lam_loss.item(),
+                        "disc_loss": disc_loss.item(),
+                        "mean_bias_noisy": mean_bias}
+        if len(raw_biases) > 0:
+            out_metrics["mean_bias_raw"] = float(np.mean(raw_biases))
+        return params, out_metrics
 
     # ----------------------------------------------
     # 2.  Called before each round to supply config
     # ----------------------------------------------
     def configure_fit(self,
-                      rnd: int,
-                      server_round: fl.server.strategy.FitConfig,
-                      parameters: fl.common.NDArray,
-                      client_manager: fl.server.client_manager.ClientManager
-                      ) -> List[Tuple[int, Dict]]:
-        # send current λ to each client
-        configs = []
-        for cid in client_manager.get_client_ids():
-            # compute λ for this client: use discriminator's prediction on
-            # the last embedding received from that client – for demo we
-            # simply broadcast the *global* λ from the policy:
-            # (in a real system you would keep a per‑client λ history)
-            lam = float(self.lambda_policy(torch.tensor([0.0], device=self.device)).item())
-            configs.append((cid, {"lambda": lam}))
-        return configs
+                      server_round: int,
+                      parameters: fl.common.Parameters,
+                      client_manager: fl.server.client_manager.ClientManager):
+        # start from FedAvg defaults (sampling, same parameters for all)
+        cfg = super().configure_fit(server_round, parameters, client_manager)
+        out = []
+        for client, fit_ins in cfg:
+            cid = getattr(client, "cid", None)
+            last_bias = 0.0
+            if cid is not None and cid in self.client_state:
+                last_bias = float(self.client_state[cid].get("bias", 0.0))
+            # compute lambda from last bias
+            with torch.no_grad():
+                lam = float(self.lambda_policy(torch.tensor([last_bias], device=self.device)).item())
+            # extend config
+            new_conf = dict(fit_ins.config)
+            new_conf["lambda"] = lam
+            out.append((client, fl.common.FitIns(fit_ins.parameters, new_conf)))
+        return out
 
 # Why this is simple yet illustrative
 # – λ is learned from bias via a tiny MLP.

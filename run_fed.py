@@ -7,8 +7,10 @@ import torchvision
 import torchvision.transforms as T
 import numpy as np
 import flwr as fl
+from typing import List
+from flwr.common import Context
 
-from client import FCFMClient
+from client import FCFMClient, SimpleCNN
 from server import FCFMStrategy
 
 # -----------------------------------------------------------------
@@ -75,19 +77,11 @@ def build_clients(n_clients=5):
                             train_loader=train_loader,
                             valid_loader=val_loader,
                             device=torch.device("cpu"),
+                            test_loader=test_loader,
                             lambda_init=1.0,
                             client_id=i)
-        # Wrap to Flower client
-        flower_client = fl.client.NumPyClient(
-            get_parameters=client.get_parameters,
-            set_parameters=client.set_parameters,
-            fit=client.fit,
-            evaluate=client.evaluate
-        )
-
-        # Keep a reference so the lambda policy can be accessed later
-        flower_client._internal_client = client
-        client_objs.append(flower_client)
+        # Directly use the NumPyClient subclass instance
+        client_objs.append(client)
 
     return client_objs
 
@@ -108,8 +102,12 @@ def main():
     )
 
     # Flower simulation
+    def client_wrapper(context: Context):
+        cid = int(getattr(context, "cid", 0))
+        return clients[cid].to_client()
+
     fl.simulation.start_simulation(
-        client_fn=lambda cid: clients[int(cid)],
+        client_fn=client_wrapper,
         num_clients=n_clients,
         config=fl.server.ServerConfig(num_rounds=n_rounds),
         strategy=strategy,

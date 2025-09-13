@@ -1,0 +1,296 @@
+(.venv) PS C:\Users\sidha\Documents\FCFM_ALM> python run_fed.py
+WARNING :   DEPRECATED FEATURE: flwr.simulation.start_simulation() is deprecated.
+        Instead, use the `flwr run` CLI command to start a local simulation in your Flower app, as shown for example below:
+
+                $ flwr new  # Create a new Flower app from a template
+
+                $ flwr run  # Run the Flower app in Simulation Mode
+
+        Using `start_simulation()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+        
+INFO :      Starting Flower simulation, config: num_rounds=20, no round_timeout
+2025-09-14 03:48:09,648 INFO worker.py:1771 -- Started a local Ray instance.
+INFO :      Flower VCE: Ray initialized with resources: {'accelerator_type:G': 1.0, 'node:__internal_head__': 1.0, 'CPU': 16.0, 'memory': 12902898894.0, 'node:127.0.0.1': 1.0, 'object_store_memory': 6451449446.0, 'GPU': 1.0}
+INFO :      Optimize your simulation with Flower VCE: https://flower.ai/docs/framework/how-to-run-simulations.html
+INFO :      Flower VCE: Resources for each Virtual Client: {'num_cpus': 1, 'num_gpus': 0}
+INFO :      Flower VCE: Creating VirtualClientEngineActorPool with 16 actors
+INFO :      [INIT]
+INFO :      Requesting initial parameters from one random client
+INFO :      Received initial parameters from one random client
+INFO :      Starting evaluation of initial global parameters
+INFO :      Evaluation returned no results (`None`)
+INFO :      
+INFO :      [ROUND 1]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+(ClientAppActor pid=26356) C:\Users\sidha\Documents\FCFM_ALM\.venv\lib\site-packages\torchvision\datasets\mnist.py:142: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+(ClientAppActor pid=26356)   img = Image.fromarray(img.numpy(), mode="L")
+INFO :      aggregate_fit: received 5 results and 0 failures
+WARNING :   No fit_metrics_aggregation_fn provided
+[Server] Round 1: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 1: Discriminator loss=0.6242, Lambda loss=0.2997
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+WARNING :   No evaluate_metrics_aggregation_fn provided
+INFO :      
+INFO :      [ROUND 2]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 2: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 2: Discriminator loss=0.6164, Lambda loss=0.2967
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 3]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 3: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 3: Discriminator loss=0.6087, Lambda loss=0.2938
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 4]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 4: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 4: Discriminator loss=0.6011, Lambda loss=0.2908
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 5]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 5: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 5: Discriminator loss=0.5939, Lambda loss=0.2879
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 6]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 6: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 6: Discriminator loss=0.5867, Lambda loss=0.2850
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 7]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 7: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 7: Discriminator loss=0.5796, Lambda loss=0.2821
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 8]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 8: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 8: Discriminator loss=0.5726, Lambda loss=0.2792
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 9]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 9: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 9: Discriminator loss=0.5656, Lambda loss=0.2763
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 10]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 10: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 10: Discriminator loss=0.5587, Lambda loss=0.2734
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 11]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 11: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 11: Discriminator loss=0.5519, Lambda loss=0.2706
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 12]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 12: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 12: Discriminator loss=0.5450, Lambda loss=0.2678
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 13]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 13: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 13: Discriminator loss=0.5383, Lambda loss=0.2649
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 14]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 14: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 14: Discriminator loss=0.5316, Lambda loss=0.2621
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 15]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 15: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 15: Discriminator loss=0.5250, Lambda loss=0.2594
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 16]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 16: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 16: Discriminator loss=0.5184, Lambda loss=0.2566
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 17]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 17: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 17: Discriminator loss=0.5119, Lambda loss=0.2538
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 18]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 18: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 18: Discriminator loss=0.5054, Lambda loss=0.2511
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 19]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 19: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 19: Discriminator loss=0.4991, Lambda loss=0.2484
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [ROUND 20]
+INFO :      configure_fit: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_fit: received 5 results and 0 failures
+[Server] Round 20: mean bias noised = 0.0126 | raw = 0.0000
+[Server] Round 20: Discriminator loss=0.4929, Lambda loss=0.2457
+INFO :      configure_evaluate: strategy sampled 5 clients (out of 5)
+INFO :      aggregate_evaluate: received 5 results and 0 failures
+INFO :      
+INFO :      [SUMMARY]
+INFO :      Run finished 20 round(s) in 42.92s
+INFO :          History (loss, distributed):
+INFO :                  round 1: 0.6905115842819214
+INFO :                  round 2: 0.6836093878746032
+INFO :                  round 3: 0.6741940069198609
+INFO :                  round 4: 0.6599783229827881
+INFO :                  round 5: 0.6446964454650879
+INFO :                  round 6: 0.6289836478233337
+INFO :                  round 7: 0.6126663970947266
+INFO :                  round 8: 0.5963181829452516
+INFO :                  round 9: 0.5827670168876646
+INFO :                  round 10: 0.5733534002304077
+INFO :                  round 11: 0.5604211258888243
+INFO :                  round 12: 0.5507178688049317
+INFO :                  round 13: 0.5415437984466551
+INFO :                  round 14: 0.5342297196388245
+INFO :                  round 15: 0.5321688413619995
+INFO :                  round 16: 0.5247940444946287
+INFO :                  round 17: 0.520160710811615
+INFO :                  round 18: 0.5186005985736847
+INFO :                  round 19: 0.5158829355239868
+INFO :                  round 20: 0.5127713286876678
+INFO :          History (metrics, distributed, fit):
+INFO :          {'disc_loss': [(1, 0.6241819262504578),
+INFO :                         (2, 0.6164163947105408),
+INFO :                         (3, 0.6087163686752319),
+INFO :                         (4, 0.6010828018188477),
+INFO :                         (5, 0.5938628911972046),
+INFO :                         (6, 0.5867213606834412),
+INFO :                         (7, 0.5796351432800293),
+INFO :                         (8, 0.5726044178009033),
+INFO :                         (9, 0.5656299591064453),
+INFO :                         (10, 0.5587118864059448),
+INFO :                         (11, 0.5518503189086914),
+INFO :                         (12, 0.5450453162193298),
+INFO :                         (13, 0.5382967591285706),
+INFO :                         (14, 0.5316043496131897),
+INFO :                         (15, 0.5249676704406738),
+INFO :                         (16, 0.5183864235877991),
+INFO :                         (17, 0.5118599534034729),
+INFO :                         (18, 0.5053876638412476),
+INFO :                         (19, 0.4990721344947815),
+INFO :                         (20, 0.49285197257995605)],
+INFO :           'lambda_policy_loss': [(1, 0.29971033334732056),
+INFO :                                  (2, 0.296734482049942),
+INFO :                                  (3, 0.2937716841697693),
+INFO :                                  (4, 0.2908225357532501),
+INFO :                                  (5, 0.2878870964050293),
+INFO :                                  (6, 0.2849661111831665),
+INFO :                                  (7, 0.28205958008766174),
+INFO :                                  (8, 0.2791678309440613),
+INFO :                                  (9, 0.27629104256629944),
+INFO :                                  (10, 0.27342939376831055),
+INFO :                                  (11, 0.27058324217796326),
+INFO :                                  (12, 0.2677527368068695),
+INFO :                                  (13, 0.2649384140968323),
+INFO :                                  (14, 0.2621404230594635),
+INFO :                                  (15, 0.2593591511249542),
+INFO :                                  (16, 0.25659501552581787),
+INFO :                                  (17, 0.25384822487831116),
+INFO :                                  (18, 0.2511191964149475),
+INFO :                                  (19, 0.24840816855430603),
+INFO :                                  (20, 0.24571552872657776)],
+INFO :           'mean_bias_noisy': [(1, 0.01257302239537239),
+INFO :                               (2, 0.01257302239537239),
+INFO :                               (3, 0.01257302239537239),
+INFO :                               (4, 0.01257302239537239),
+INFO :                               (5, 0.01257302239537239),
+INFO :                               (6, 0.01257302239537239),
+INFO :                               (7, 0.01257302239537239),
+INFO :                               (8, 0.01257302239537239),
+INFO :                               (9, 0.01257302239537239),
+INFO :                               (10, 0.01257302239537239),
+INFO :                               (11, 0.01257302239537239),
+INFO :                               (12, 0.01257302239537239),
+INFO :                               (13, 0.01257302239537239),
+INFO :                               (14, 0.01257302239537239),
+INFO :                               (15, 0.01257302239537239),
+INFO :                               (16, 0.01257302239537239),
+INFO :                               (17, 0.01257302239537239),
+INFO :                               (18, 0.01257302239537239),
+INFO :                               (19, 0.01257302239537239),
+INFO :                               (20, 0.01257302239537239)],
+INFO :           'mean_bias_raw': [(1, 0.0),
+INFO :                             (2, 0.0),
+INFO :                             (3, 0.0),
+INFO :                             (4, 0.0),
+INFO :                             (5, 0.0),
+INFO :                             (6, 0.0),
+INFO :                             (7, 0.0),
+INFO :                             (8, 0.0),
+INFO :                             (9, 0.0),
+INFO :                             (10, 0.0),
+INFO :                             (11, 0.0),
+INFO :                             (12, 0.0),
+INFO :                             (13, 0.0),
+INFO :                             (14, 0.0),
+INFO :                             (15, 0.0),
+INFO :                             (16, 0.0),
+INFO :                             (17, 0.0),
+INFO :                             (18, 0.0),
+INFO :                             (19, 0.0),
+INFO :                             (20, 0.0)]}
+INFO :
+(ClientAppActor pid=28912) C:\Users\sidha\Documents\FCFM_ALM\.venv\lib\site-packages\torchvision\datasets\mnist.py:142: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15) [repeated 4x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)
+(ClientAppActor pid=28912)   img = Image.fromarray(img.numpy(), mode="L") [repeated 4x across cluster]
