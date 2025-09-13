@@ -1,4 +1,11 @@
-torch==2.0.1   # pairs with torchvision 0.15.2
-torchvision==0.15.2
-flwr==1.11.0
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+# CUDA-enabled PyTorch (Windows/Linux, CUDA 11.8)
+torch==2.0.1+cu118
+torchvision==0.15.2+cu118
+
+# Flower with simulation extras (installs Ray)
+flwr[simulation]==1.11.0
+
+# ML utils
 scikit-learn==1.5.2

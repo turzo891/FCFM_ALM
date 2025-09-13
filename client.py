@@ -1,4 +1,10 @@
-# client.py
+"""Client-side training and metrics for the FCFM‑ALM demo.
+
+This module defines a lightweight CNN, a Flower NumPyClient that trains it,
+and the logic to compute and return differentially private (DP) fairness
+signals alongside model updates. It also exposes an evaluation routine so the
+server can aggregate meaningful validation statistics.
+"""
 import flwr as fl
 import torch
 import torch.nn as nn
@@ -13,8 +19,8 @@ from utils import (SimpleCounterfactual, BiasEstimator,
 import json
 
 
-# ---------------------------  Basic CNN  ---------------------------------
 class SimpleCNN(nn.Module):
+    """Tiny CNN suitable for MNIST‑like 1×28×28 inputs."""
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(1, 8, 3, padding=1)
@@ -30,14 +36,13 @@ class SimpleCNN(nn.Module):
         return self.fc(x)
 
 
-# ---------------------------  Flower client --------------------------------
 class FCFMClient(fl.client.NumPyClient):
-    """
-    A client that:
-      – trains a local CNN
-      – computes a DP‑protected bias estimate
-      – returns the weight delta together with the bias payload
-      – receives lambda from the server for the next round
+    """Flower client that trains locally and reports fairness signals.
+
+    The client optimizes BCE loss plus an adaptive fairness penalty weighted by
+    λ (provided by the server). After each fit round it returns DP‑noised bias,
+    uncertainty, and a small embedding, as well as the raw (non‑DP) bias for
+    diagnostics.
     """
     def __init__(self,
                  model: nn.Module,
@@ -68,25 +73,24 @@ class FCFMClient(fl.client.NumPyClient):
         self.cf_gen = SimpleCounterfactual(device)
         self.bias_estimator = BiasEstimator(self.model, device)
 
-    # ---------------------------  internal training  --------------------------------
     def _train_one_round(self, epochs: int = 1):
+        """Run local training for the requested number of epochs."""
         self.model.train()
         for _ in range(epochs):
             for X, y, a in self.train_loader:
                 X, y, a = X.to(self.device), y.to(self.device).float(), a.to(self.device).float()
                 logits = self.model(X).squeeze()
                 loss_pred = self.criterion(logits, y)
-                # compute bias and uncertainty
                 bias, uncert = self.bias_estimator.compute_bias(X, y, a,
                                                                self.cf_gen,
                                                                num_ensembles=3)
-                loss = loss_pred + self.lambda_i * bias  # λ‑weighted
+                loss = loss_pred + self.lambda_i * bias
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
-    # ---------------------------  bias estimate  --------------------------------
     def _compute_bias_payload(self) -> dict:
+        """Compute per‑client DP payload and a raw bias for diagnostics."""
         self.model.eval()
         biases = []
         uncertainties = []
@@ -100,8 +104,7 @@ class FCFMClient(fl.client.NumPyClient):
                                                                num_ensembles=3)
                 biases.append(bias)
                 uncertainties.append(uncert)
-                emb = compute_embedding(X)  # shape (batch, 10)
-                # accumulate sum over batch for a stable mean across variable batch sizes
+                emb = compute_embedding(X)
                 batch_sum = emb.sum(axis=0)
                 if sum_emb is None:
                     sum_emb = batch_sum.astype(np.float32)
@@ -114,8 +117,7 @@ class FCFMClient(fl.client.NumPyClient):
             mean_emb = (sum_emb / float(total_emb)).astype(np.float32)
         else:
             mean_emb = np.zeros(10, dtype=np.float32)
-
-        # DP clip + noise
+        
         dp_bias = dp_clip_and_add_noise(
             torch.tensor(mean_bias, dtype=torch.float32),
             self.clip_norm_bias, self.noise_std_bias, eps=1.0,
@@ -136,27 +138,29 @@ class FCFMClient(fl.client.NumPyClient):
             "bias_noisy": float(dp_bias),
             "bias_raw": float(mean_bias),
             "uncert": float(dp_uncert),
-            # Flower metrics must be scalars/strings; encode array as JSON
             "embed":  json.dumps(np.asarray(dp_embed, dtype=np.float32).tolist()),
         }
         return payload
 
-    # ---------------------------  Flower API --------------------------------
     def get_properties(self, ins) -> Dict[str, str]:
+        """Return static client properties for the server."""
         return {"num_clients": str(1), "client_id": str(self.client_id)}
 
     def get_parameters(self, config=None):
+        """Serialize local model parameters to a list of ndarrays."""
         return [v.cpu().numpy() for v in self.model.state_dict().values()]
 
     def set_parameters(self, parameters):
+        """Load parameters received from the server into the local model."""
         state_dict = OrderedDict(
             zip(self.model.state_dict().keys(), [torch.tensor(x) for x in parameters])
         )
         self.model.load_state_dict(state_dict, strict=True)
 
     def fit(self, parameters, config):
+        """Perform one local training round and return metrics/payload."""
         self.set_parameters(parameters)
-        self.lambda_i = config.get("lambda", self.lambda_i)  # updated λ from server
+        self.lambda_i = config.get("lambda", self.lambda_i)
         round_epochs = config.get("local_epochs", 1)
         self._train_one_round(round_epochs)
 
@@ -171,6 +175,7 @@ class FCFMClient(fl.client.NumPyClient):
         return self.get_parameters(), len(self.train_loader.dataset), metrics
 
     def evaluate(self, parameters, config):
+        """Evaluate current global parameters on held‑out data."""
         self.set_parameters(parameters)
         self.model.eval()
         loader = self.test_loader if self.test_loader is not None else self.valid_loader
