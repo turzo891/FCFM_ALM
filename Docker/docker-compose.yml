@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  # 4.1  FL SERVER (runs on your host, no image needed)
+  server:
+    build: ./server
+    container_name: fcfm_server
+    restart: always
+    ports:
+      - "8080:8080"
+
+  # 4.2  Client 1
+  client1:
+    build: ./client
+    container_name: fcfm_client1
+    environment:
+      - SERVER_ADDRESS=host.docker.internal:8080   # macOS/Windows
+      # - SERVER_ADDRESS=host.docker.internal:8080 # Linux (Docker 20.10+)
+    restart: unless-stopped
+
+  # 4.3  Client 2 …
+  client2:
+    build: ./client
+    container_name: fcfm_client2
+    environment:
+      - SERVER_ADDRESS=host.docker.internal:8080
+    restart: unless-stopped
+
+  # Add as many client services as you wish
+  client3:
+    build: ./client
+    container_name: fcfm_client3
+    environment:
+      - SERVER_ADDRESS=host.docker.internal:8080
+    restart: unless-stopped
+
+
+#     How it works
+
+# host.docker.internal resolves to the host’s IP from inside the container (works on macOS/Windows ≥ 20.10).
+# On Linux you can simply use the host’s IP address (e.g. 192.168.1.10).
+# The server container exposes port 8080 so that all clients can reach 0.0.0.0:8080 from inside the network.
+# Run it
+
+# docker compose up -d    # Start everything in the background
+# You will see logs similar to:
+
+# [+] Running 3/3
+#  ✔ Container fcfm_server   Started
+#  ✔ Container fcfm_client1  Started
+#  ✔ Container fcfm_client2  Started
+# The clients connect to the server over the Docker network and begin federated rounds immediately.

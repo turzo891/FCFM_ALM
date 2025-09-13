@@ -1,0 +1,4 @@
+torch==2.0.1   # or any >2.0
+torchvision==0.15.1
+flower==1.11.0
+scikit-learn==1.2.2
